@@ -1,0 +1,1 @@
+"""Second-layer tools for the Tool Smith MCP server."""

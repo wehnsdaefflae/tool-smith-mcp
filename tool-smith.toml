@@ -1,0 +1,40 @@
+# Tool Smith MCP Configuration
+# Configuration file for the Tool Smith MCP server
+
+[server]
+# Server configuration
+name = "tool-smith-mcp"
+version = "0.1.0"
+description = "MCP server that dynamically creates and manages tools using LLM assistance"
+
+[claude]
+# Claude API configuration
+model = "claude-3-5-sonnet-20241022"
+max_tokens = 4000
+temperature = 0.1
+structure_args_temperature = 0.0
+structure_args_max_tokens = 1000
+
+[tools]
+# Tool management configuration
+similarity_threshold = 0.7
+search_top_k = 3
+tools_dir = "./tool-smith-mcp/tools"  # Runtime tools directory
+initial_tools_dir = "resources/initial_tools"  # Built-in initial tools
+
+[vector_store]
+# Vector database configuration
+db_path = "./tool-smith-mcp/vector_db"
+collection_name = "tool_descriptions"
+model_name = "all-MiniLM-L6-v2"
+anonymized_telemetry = false
+
+[logging]
+# Logging configuration
+level = "INFO"
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+[development]
+# Development-specific settings
+auto_reload = false
+debug_mode = false
