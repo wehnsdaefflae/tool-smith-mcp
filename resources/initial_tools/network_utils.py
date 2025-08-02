@@ -24,6 +24,24 @@ def network_utils(
     Returns:
         Operation result
         
+    Structured Output:
+        - parse_url: Dict containing URL components with fields:
+          * scheme: protocol string (e.g., "https")
+          * netloc: network location string (e.g., "example.com:80")
+          * hostname: hostname string without port
+          * port: port number integer or None
+          * path: URL path string
+          * query: query string
+          * fragment: fragment string after #
+          * params: dict of query parameters with lists as values
+        - check_status: Dict containing status information with fields:
+          * status_code: HTTP status code integer or None
+          * status_message: HTTP status message string or None
+          * headers: dict of HTTP response headers (when accessible)
+          * url: final URL string after redirects (when accessible)
+          * accessible: boolean indicating if URL is reachable
+          * error: error message string (when not accessible)
+        
     Raises:
         ValueError: For invalid operations or parameters
         urllib.error.URLError: For HTTP errors

@@ -21,6 +21,17 @@ def datetime_utils(
     Returns:
         Result based on operation type
         
+    Structured Output:
+        - info: Dict containing comprehensive date information with fields:
+          * date: date string in YYYY-MM-DD format
+          * time: time string in HH:MM:SS format
+          * datetime: combined datetime string in YYYY-MM-DD HH:MM:SS format
+          * weekday: full weekday name string (e.g., "Monday")
+          * is_weekend: boolean indicating if date falls on weekend
+          * day_of_year: integer day number within the year (1-366)
+          * week_of_year: integer ISO week number within the year
+          * timestamp: Unix timestamp as integer
+        
     Raises:
         ValueError: For invalid operations or date formats
     """

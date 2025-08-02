@@ -25,6 +25,19 @@ def file_operations(
     Returns:
         Operation result (content, boolean, list, or dict)
         
+    Structured Output:
+        - read: String content or dict/list for JSON files
+        - list: List of filename strings in directory
+        - info: Dict containing file metadata with fields:
+          * name: filename string
+          * path: absolute path string  
+          * size: file size in bytes
+          * is_file: boolean indicating if path is a file
+          * is_dir: boolean indicating if path is a directory
+          * created: creation timestamp (seconds since epoch)
+          * modified: modification timestamp (seconds since epoch)  
+          * permissions: octal permission string (e.g. "644")
+        
     Raises:
         ValueError: For invalid operations
         OSError: For file system errors
