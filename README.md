@@ -145,13 +145,22 @@ graph TD
 
 Tool Smith MCP comes with a comprehensive set of **initial tools** that serve as building blocks:
 
+### AI & LLM Operations
+- **`ask_ai`**: AI question answering with structured output support
+- Uses Claude API with tool calling for reliable JSON responses
+
 ### Mathematical Operations
 - **`calculate_math`**: Safe evaluation of mathematical expressions
-- Complex calculations, formula evaluation, unit conversions
+- **`statistics`**: Statistical calculations (mean, median, std, summary)
 
 ### Text Processing  
 - **`format_text`**: String manipulation and formatting
 - Case conversion, trimming, replacement, validation
+
+### Web Operations
+- **`web_fetch`**: Simple web content fetching
+- **`html_parser`**: HTML parsing and data extraction
+- **`network_utils`**: HTTP requests and URL handling
 
 ### File Operations
 - **`file_operations`**: File and directory management
@@ -167,11 +176,6 @@ Tool Smith MCP comes with a comprehensive set of **initial tools** that serve as
 - **`datetime_utils`**: Date and time operations
 - Parsing, formatting, arithmetic, timezone handling
 - Age calculation, weekday detection
-
-### Network Operations
-- **`network_utils`**: HTTP requests and URL handling
-- GET/POST requests, URL validation and parsing
-- Status checking, parameter encoding
 
 ### Encoding & Security
 - **`encoding_utils`**: Encoding, hashing, and cryptographic operations
@@ -227,13 +231,17 @@ src/
 
 resources/
 └── initial_tools/             # Built-in tools
-    ├── calculate_math.py
-    ├── format_text.py
-    ├── file_operations.py
-    ├── data_processing.py
-    ├── datetime_utils.py
-    ├── network_utils.py
-    └── encoding_utils.py
+    ├── ask_ai.py              # AI question answering with structured output
+    ├── calculate_math.py      # Mathematical calculations
+    ├── data_processing.py     # Data manipulation and analysis
+    ├── datetime_utils.py      # Date and time operations
+    ├── encoding_utils.py      # Encoding, hashing, cryptography
+    ├── file_operations.py     # File and directory management
+    ├── format_text.py         # Text formatting and manipulation
+    ├── html_parser.py         # HTML parsing and extraction
+    ├── network_utils.py       # HTTP requests and URL handling
+    ├── statistics.py          # Statistical calculations
+    └── web_fetch.py           # Simple web content fetching
 
 tests/                         # Test suite
 tool-smith.toml               # Configuration file

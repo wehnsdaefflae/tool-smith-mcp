@@ -90,8 +90,17 @@ src/
 
 resources/
 └── initial_tools/             # Built-in initial tools
+    ├── ask_ai.py              # AI question answering with structured output
     ├── calculate_math.py      # Mathematical calculations
-    └── format_text.py         # Text formatting
+    ├── data_processing.py     # Data manipulation and analysis
+    ├── datetime_utils.py      # Date and time operations
+    ├── encoding_utils.py      # Encoding, hashing, cryptography
+    ├── file_operations.py     # File and directory management
+    ├── format_text.py         # Text formatting and manipulation
+    ├── html_parser.py         # HTML parsing and extraction
+    ├── network_utils.py       # HTTP requests and URL handling
+    ├── statistics.py          # Statistical calculations
+    └── web_fetch.py           # Simple web content fetching
 
 tests/                         # Comprehensive test suite
 ├── test_server.py
