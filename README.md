@@ -4,12 +4,34 @@ A **Model Context Protocol (MCP) server** that dynamically creates and manages t
 
 ## 🚀 Features
 
+### Core Capabilities
 - **Dynamic Tool Creation**: Automatically generates new tools using Claude API when existing tools don't match requirements
 - **Semantic Tool Search**: Uses vector embeddings to find the most suitable existing tools for tasks
 - **Persistent Tool Storage**: Saves generated tools for reuse and builds a growing toolkit over time
 - **Rich Initial Tools**: Comprehensive set of building-block tools for common operations
-- **Configuration Management**: TOML-based configuration for easy customization
+
+### 🔒 Security & Isolation
+- **Docker Sandboxing**: Generated tools execute in isolated Docker containers with strict resource limits
+- **Network Isolation**: Containers have no network access to prevent data exfiltration
+- **Resource Constraints**: Memory (256MB) and CPU (50%) limits prevent resource exhaustion
+- **Automatic Cleanup**: Containers are automatically removed after execution
+
+### ⚡ Performance & Efficiency
+- **Intelligent Caching**: Multi-level caching for embeddings, tool code, and execution results
+- **Embedding Cache**: Prevents re-computation of identical text embeddings (1-hour TTL)
+- **Tool Code Cache**: Caches generated tool code for similar tasks (30-minute TTL)
+- **Persistent Cache**: File-based cache survives server restarts
+
+### 🛡️ Reliability & Monitoring
+- **Robust Error Handling**: Fail-fast approach with detailed error messages and graceful degradation
+- **Comprehensive Logging**: Structured logging with configurable verbosity levels
+- **Health Monitoring**: Docker connectivity and API availability checks
 - **Type Safety**: Full type hints and Pydantic validation throughout
+
+### ⚙️ Configuration & Deployment
+- **TOML Configuration**: Comprehensive configuration with environment variable support
+- **Flexible Deployment**: Docker-optional deployment with automatic fallback
+- **Development Tools**: Complete testing suite and code quality checks
 
 ## 📋 Table of Contents
 
@@ -82,6 +104,7 @@ Tool Smith MCP uses a `tool-smith.toml` configuration file. Create one in your w
 ```toml
 [server]
 name = "tool-smith-mcp"
+version = "0.1.0"
 
 [claude]
 model = "claude-3-5-sonnet-20241022"
@@ -92,22 +115,65 @@ temperature = 0.1
 similarity_threshold = 0.7
 search_top_k = 3
 tools_dir = "./tool-smith-mcp/tools"
+initial_tools_dir = "resources/initial_tools"
 
 [vector_store]
 db_path = "./tool-smith-mcp/vector_db"
 model_name = "all-MiniLM-L6-v2"
 
+[docker]
+enabled = true
+image_name = "python:3.11-slim"
+container_timeout = 30
+memory_limit = "256m"
+cpu_limit = 0.5
+
+[cache]
+enabled = true
+cache_dir = "./tool-smith-mcp/cache"
+embedding_ttl = 3600      # 1 hour
+tool_code_ttl = 1800      # 30 minutes
+
 [logging]
 level = "INFO"
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 ```
 
 ### Configuration Sections
 
-- **server**: Basic server settings
+- **server**: Basic server settings (name, version)
 - **claude**: Claude API configuration (model, tokens, temperature)
 - **tools**: Tool management settings (similarity threshold, directories)
-- **vector_store**: Vector database configuration
-- **logging**: Logging level and format
+- **vector_store**: Vector database configuration for semantic search
+- **docker**: Docker sandboxing configuration (image, limits, timeout)
+- **cache**: Performance caching settings (TTL, directories)
+- **logging**: Logging level and format configuration
+
+### Security Configuration
+
+**Docker Sandboxing** (recommended for production):
+```toml
+[docker]
+enabled = true                    # Enable Docker isolation
+image_name = "python:3.11-slim"  # Container image
+container_timeout = 30           # Max execution time (seconds)
+memory_limit = "256m"            # Memory limit
+cpu_limit = 0.5                  # CPU limit (fraction of core)
+```
+
+**Performance Optimization**:
+```toml
+[cache]
+enabled = true                   # Enable caching
+cache_dir = "./tool-smith-mcp/cache"
+embedding_ttl = 3600            # Embedding cache TTL (1 hour)
+tool_code_ttl = 1800            # Tool code cache TTL (30 minutes)
+```
+
+### Environment Variables
+
+- **CLAUDE_API_KEY**: Required. Your Anthropic Claude API key
+- **DOCKER_HOST**: Optional. Docker daemon connection (if using remote Docker)
 
 ## 🏗 Architecture
 
@@ -221,16 +287,18 @@ black src/tool_smith_mcp tests && isort src/tool_smith_mcp tests && mypy src/too
 src/
 └── tool_smith_mcp/
     ├── core/
-    │   ├── server.py          # Main MCP server
-    │   └── tool_manager.py    # Tool management logic
+    │   ├── server.py          # Main MCP server implementation
+    │   └── tool_manager.py    # Tool creation and management
     ├── utils/
-    │   ├── vector_store.py    # Vector database operations
+    │   ├── vector_store.py    # Vector database for tool indexing
     │   ├── claude_client.py   # Claude API client
-    │   └── config.py          # Configuration management
+    │   ├── config.py          # Configuration management
+    │   ├── cache.py           # Caching utilities
+    │   └── docker_executor.py # Docker sandboxing execution
     └── __init__.py
 
 resources/
-└── initial_tools/             # Built-in tools
+└── initial_tools/             # Built-in initial tools
     ├── ask_ai.py              # AI question answering with structured output
     ├── calculate_math.py      # Mathematical calculations
     ├── data_processing.py     # Data manipulation and analysis
@@ -243,8 +311,18 @@ resources/
     ├── statistics.py          # Statistical calculations
     └── web_fetch.py           # Simple web content fetching
 
-tests/                         # Test suite
-tool-smith.toml               # Configuration file
+tests/                         # Comprehensive test suite
+├── test_server.py            # Server integration tests
+├── test_tool_manager.py      # Tool manager unit tests
+├── test_vector_store.py      # Vector store tests
+├── test_claude_client.py     # Claude API client tests
+├── test_config.py           # Configuration tests
+├── test_cache.py            # Cache functionality tests
+├── test_docker_executor.py  # Docker execution tests
+└── test_integration.py      # End-to-end integration tests
+
+tool-smith.toml              # Configuration file
+IMPROVEMENTS.md              # Security and performance improvements
 ```
 
 ## 📚 API Reference

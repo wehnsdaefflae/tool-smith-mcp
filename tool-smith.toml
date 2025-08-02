@@ -1,8 +1,7 @@
-# Tool Smith MCP Configuration
-# Configuration file for the Tool Smith MCP server
+# Tool Smith MCP Configuration File
+# This file configures the behavior of the Tool Smith MCP server
 
 [server]
-# Server configuration
 name = "tool-smith-mcp"
 version = "0.1.0"
 description = "MCP server that dynamically creates and manages tools using LLM assistance"
@@ -16,25 +15,41 @@ structure_args_temperature = 0.0
 structure_args_max_tokens = 1000
 
 [tools]
-# Tool management configuration
-similarity_threshold = 0.7
-search_top_k = 3
-tools_dir = "./tool-smith-mcp/tools"  # Runtime tools directory
-initial_tools_dir = "resources/initial_tools"  # Built-in initial tools
+# Tool discovery and creation settings
+similarity_threshold = 0.7  # Minimum similarity score for tool reuse (0.0-1.0)
+search_top_k = 3           # Number of similar tools to search for
+tools_dir = "./tool-smith-mcp/tools"              # Directory for runtime-generated tools
+initial_tools_dir = "resources/initial_tools"      # Directory for built-in tools
 
 [vector_store]
-# Vector database configuration
+# Vector database configuration for semantic search
 db_path = "./tool-smith-mcp/vector_db"
 collection_name = "tool_descriptions"
-model_name = "all-MiniLM-L6-v2"
+model_name = "all-MiniLM-L6-v2"   # Sentence transformer model for embeddings
 anonymized_telemetry = false
+
+[docker]
+# Docker sandboxing configuration
+enabled = true                     # Enable/disable Docker execution for generated tools
+image_name = "python:3.11-slim"   # Docker image for tool execution
+container_timeout = 30            # Maximum execution time in seconds
+memory_limit = "256m"             # Memory limit for containers
+cpu_limit = 0.5                   # CPU limit as fraction of single core
+
+[cache]
+# Caching configuration for performance optimization
+enabled = true                              # Enable/disable caching
+cache_dir = "./tool-smith-mcp/cache"       # Directory for cache files
+embedding_ttl = 3600                       # Embedding cache TTL in seconds (1 hour)
+tool_code_ttl = 1800                       # Tool code cache TTL in seconds (30 minutes)
+cleanup_interval = 3600                    # Cache cleanup interval in seconds (1 hour)
 
 [logging]
 # Logging configuration
-level = "INFO"
+level = "INFO"                             # Log level: DEBUG, INFO, WARNING, ERROR
 format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 [development]
 # Development-specific settings
-auto_reload = false
-debug_mode = false
+auto_reload = false                        # Auto-reload on code changes
+debug_mode = false                         # Enable debug features
