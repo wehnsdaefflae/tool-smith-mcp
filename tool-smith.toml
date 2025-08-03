@@ -29,9 +29,10 @@ model_name = "all-MiniLM-L6-v2"   # Sentence transformer model for embeddings
 anonymized_telemetry = false
 
 [docker]
-# Docker sandboxing configuration
-enabled = true                     # Enable/disable Docker execution for generated tools
-image_name = "python:3.11-slim"   # Docker image for tool execution
+# Docker sandboxing configuration - ALL tools execute in containers
+enabled = true                     # Enable/disable Docker execution for ALL tools (initial and generated)
+force_local_for_debugging = false # Force local execution for all tools (overrides enabled, useful for debugging)
+image_name = "python:3.10-slim"   # Docker image matching venv Python version (3.10)
 container_timeout = 30            # Maximum execution time in seconds
 memory_limit = "256m"             # Memory limit for containers
 cpu_limit = 0.5                   # CPU limit as fraction of single core

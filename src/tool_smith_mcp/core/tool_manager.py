@@ -6,8 +6,9 @@ import importlib.util
 import inspect
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
+from ..models import ToolInfo, ToolType
 from ..utils.cache import SimpleCache
 from ..utils.claude_client import ClaudeClient
 from ..utils.docker_executor import DockerExecutor
@@ -171,6 +172,14 @@ class ToolManager:
                         if not name.startswith("_") and obj.__doc__:
                             self.loaded_tools[name] = obj
 
+                            # Store metadata for initial tools
+                            self.tool_metadata[name] = {
+                                "code": tool_file.read_text(),  # Store full file content
+                                "file": str(tool_file),
+                                "function": name,
+                                "type": "initial",
+                            }
+
                             # Add to vector store
                             await self.vector_store.add_document(
                                 doc_id=name,
@@ -275,36 +284,75 @@ class ToolManager:
         tool_func: Any,
         arguments: Dict[str, Any],
         task_description: str,
+        force_local: bool = False,
     ) -> Any:
-        """Execute a tool safely using Docker if available."""
-        # Check if this is a generated tool that should run in Docker
+        """Execute a tool safely using Docker containers for ALL tools.
+
+        Args:
+            tool_func: Function to execute
+            arguments: Arguments to pass to the function
+            task_description: Description of the task being performed
+            force_local: If True, always execute locally (useful for debugging)
+
+        Returns:
+            Function execution result
+        """
         tool_metadata = self.tool_metadata.get(tool_func.__name__, {})
-        is_generated = tool_metadata.get("type") != "initial"
+        tool_name = tool_func.__name__
+        is_initial = tool_metadata.get("type") == "initial"
 
-        if self.docker_executor and is_generated:
-            # Execute in Docker container for security
-            logger.debug(f"Executing {tool_func.__name__} in Docker container")
+        # Determine execution mode - ALL tools use Docker unless forced local
+        should_use_docker = not force_local and self.docker_executor is not None
 
-            # Get tool code from metadata
+        if should_use_docker:
+            # Execute in Docker container for ALL tools (security and consistency)
+            tool_type_desc = "initial tool" if is_initial else "generated tool"
+            logger.info(f"Executing {tool_name} in Docker container ({tool_type_desc})")
+
+            # Get tool code
             tool_code = tool_metadata.get("code")
             if not tool_code:
-                # Fallback: read from file
-                tool_file = self.tools_dir / f"{tool_func.__name__}.py"
-                if tool_file.exists():
-                    tool_code = tool_file.read_text()
+                if is_initial:
+                    # Read initial tool from initial_tools_dir
+                    tool_file = None
+                    if self.initial_tools_dir:
+                        for py_file in self.initial_tools_dir.glob("*.py"):
+                            try:
+                                content = py_file.read_text()
+                                if f"def {tool_name}(" in content:
+                                    tool_file = py_file
+                                    break
+                            except Exception:
+                                continue
+                    
+                    if tool_file:
+                        tool_code = tool_file.read_text()
+                    else:
+                        raise RuntimeError(f"Initial tool code not found for {tool_name}")
                 else:
-                    raise RuntimeError(f"Tool code not found for {tool_func.__name__}")
+                    # Read generated tool from tools_dir
+                    tool_file = self.tools_dir / f"{tool_name}.py"
+                    if tool_file.exists():
+                        tool_code = tool_file.read_text()
+                    else:
+                        raise RuntimeError(f"Generated tool code not found for {tool_name}")
 
+            # Execute in Docker - fail if Docker fails
             return await self.docker_executor.execute_tool(
                 tool_code=tool_code,
-                function_name=tool_func.__name__,
+                function_name=tool_name,
                 arguments=arguments,
                 tools_dir=self.tools_dir,
                 initial_tools_dir=self.initial_tools_dir,
             )
         else:
-            # Execute locally for initial tools or when Docker is disabled
-            logger.debug(f"Executing {tool_func.__name__} locally")
+            # Execute locally only when forced (debugging)
+            execution_reason = (
+                "forced local execution (debugging)"
+                if force_local
+                else "Docker disabled"
+            )
+            logger.info(f"Executing {tool_name} locally ({execution_reason})")
             return tool_func(**arguments)
 
     async def _save_and_load_tool(
@@ -361,3 +409,70 @@ class ToolManager:
             return actual_func
 
         raise RuntimeError(f"Failed to load tool: {tool_name}")
+
+    async def execute_tool_directly(
+        self,
+        tool_name: str,
+        arguments: Dict[str, Any],
+        force_local: bool = False,
+    ) -> Any:
+        """Execute a specific tool directly (useful for testing).
+
+        Args:
+            tool_name: Name of the tool to execute
+            arguments: Arguments to pass to the tool
+            force_local: If True, always execute locally
+
+        Returns:
+            Tool execution result
+
+        Raises:
+            KeyError: If tool is not found
+        """
+        if tool_name not in self.loaded_tools:
+            raise KeyError(
+                f"Tool '{tool_name}' not found. Available tools: {list(self.loaded_tools.keys())}"
+            )
+
+        tool_func = self.loaded_tools[tool_name]
+        logger.info(f"Directly executing tool: {tool_name}")
+
+        return await self._execute_tool_safely(
+            tool_func=tool_func,
+            arguments=arguments,
+            task_description=f"Direct execution of {tool_name}",
+            force_local=force_local,
+        )
+
+    def list_tools(self) -> List[ToolInfo]:
+        """List all available tools with their metadata.
+
+        Returns:
+            List of ToolInfo objects with tool metadata
+        """
+        result = []
+
+        for tool_name, tool_func in self.loaded_tools.items():
+            metadata = self.tool_metadata.get(tool_name, {})
+            signature = str(inspect.signature(tool_func))
+            docstring = tool_func.__doc__ or "No description"
+            
+            # Determine tool type
+            tool_type_str = metadata.get("type", "unknown")
+            if tool_type_str == "initial":
+                tool_type = ToolType.INITIAL
+            elif tool_type_str == "generated":
+                tool_type = ToolType.GENERATED
+            else:
+                tool_type = ToolType.UNKNOWN
+
+            tool_info = ToolInfo(
+                name=tool_name,
+                signature=signature,
+                docstring=docstring,
+                type=tool_type,
+                file=metadata.get("file", "unknown"),
+            )
+            result.append(tool_info)
+
+        return result
